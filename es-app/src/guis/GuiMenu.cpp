@@ -1,3 +1,8 @@
+#include <list>
+#include <algorithm>
+#include <string>
+#include <sstream>
+
 #include "EmulationStation.h"
 #include "guis/GuiMenu.h"
 #include "Window.h"
@@ -237,6 +242,137 @@ GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MEN
 
 	setSize(mMenu.getSize());
 	setPosition((Renderer::getScreenWidth() - mSize.x()) / 2, Renderer::getScreenHeight() * 0.15f);
+}
+
+void GuiMenu::createConfigInput(){
+    
+                GuiSettings *  s = new GuiSettings(mWindow, "CONFIGURE INPUT");
+
+                Window* window = mWindow;
+
+                ComponentListRow row;
+                row.makeAcceptInputHandler([window, this, s] {
+                    window->pushGui(new GuiMsgBox(window, "I18NMESSAGECONTROLLERS", "OK", 
+                            [window, this, s] {
+                                window->pushGui(new GuiDetectDevice(window, false, [this, s] {
+                                    s->setSave(false);
+                                    delete s;
+                                    this->createConfigInput();
+                                }));
+                            }));
+                });
+                        
+                
+                row.addElement(std::make_shared<TextComponent>(window, "CONFIGURE A CONTROLLER", Font::get(FONT_SIZE_MEDIUM), 0x777777FF), true);
+                s->addRow(row);
+
+                
+                row.elements.clear();
+		// quick system select (left/right in game list view)
+                auto gpio_select = std::make_shared<SwitchComponent>(mWindow);
+                gpio_select->setState(Settings::getInstance()->getBool("GpioControllers"));
+                s->addWithLabel("GPIO CONTROLLERS", gpio_select);
+
+                // Here we go; for each player
+                std::vector<std::shared_ptr<OptionListComponent<std::string>>> options;
+                for (int player = 0; player < 4; player++) {
+                    std::stringstream sstm;
+                    sstm << "INPUT P" << player +1;
+                    std::string confName = sstm.str();
+
+                    auto inputOptionList = std::make_shared<OptionListComponent<std::string> >(mWindow, confName, false);
+                    options.push_back(inputOptionList);
+                    
+                    // Checking if a setting has been saved, else setting to default
+                    std::string configuratedName = Settings::getInstance()->getString(confName);
+                    std::list<int> alreadyTaken = std::list<int>();
+                    
+                    bool found = false;
+                    // For each available and configured input
+                    for (auto it = 0; it < InputManager::getInstance()->getNumJoysticks(); it++) {
+                        InputConfig * config = InputManager::getInstance()->getInputConfigByDevice(it);
+                        if(config->isConfigured()) {
+                            // create name
+                            std::stringstream dispNameSS;
+                            dispNameSS << "#" << config->getDeviceId() << " ";
+                            std::string deviceName = config->getDeviceName();
+                            if(deviceName.size() > 25){ 
+                                dispNameSS << deviceName.substr(0, 16) << "..." << deviceName.substr(deviceName.size()-5, deviceName.size()-1);
+                            }else {
+                                dispNameSS << deviceName;
+                            }
+                            
+                            std::string displayName = dispNameSS.str();
+                            
+                            
+                            bool foundFromConfig = configuratedName == config->getDeviceName();
+                            int deviceID = config->getDeviceId();
+                            // Si la manette est configurée, qu'elle correspond a la configuration, et qu'elle n'est pas 
+                            // deja selectionnée on l'ajoute en séléctionnée
+                            if(foundFromConfig && ! (std::find(alreadyTaken.begin(), alreadyTaken.end(), deviceID) != alreadyTaken.end())) {
+                                found = true;
+                                alreadyTaken.push_back(deviceID);
+                                LOG(LogWarning) << "adding entry for player"<<player << " (selected): " << config->getDeviceName() << "  " << config->getDeviceGUIDString();
+                                inputOptionList->add(displayName, config->getDeviceName(), true);
+                            }else {
+                                LOG(LogWarning) << "adding entry for player"<<player << " (not selected): " << config->getDeviceName() << "  " << config->getDeviceGUIDString();
+                                inputOptionList->add(displayName, config->getDeviceName(), false);
+                            }
+                        }
+                    }
+                    if (configuratedName.compare("") == 0 || !found) {
+                        LOG(LogWarning) << "adding default entry for player "<<player << "(selected : true)";
+                        inputOptionList->add("DEFAULT", "", true);
+                    }else {
+                        LOG(LogWarning) << "adding default entry for player"<<player << "(selected : false)";
+                        inputOptionList->add("DEFAULT", "", false);
+                    }
+                    
+                    // ADD default config
+                    
+                    // Populate controllers list
+                    s->addWithLabel(confName, inputOptionList);
+                             
+                }
+                s->addSaveFunc([this, options, window, gpio_select] {
+                      for (int player = 0; player < 4; player++) {
+                            std::stringstream sstm;
+                            sstm << "INPUT P" << player+1;
+                            std::string confName = sstm.str();
+
+                            auto input_p1 = options.at(player);
+                            std::string name;
+                            std::string selectedName = input_p1->getSelectedName();
+
+                            if (selectedName.compare("DEFAULT") == 0) {
+                                name = "DEFAULT";
+                                Settings::getInstance()->setString(confName, name);                            
+                            } else {
+                                LOG(LogWarning) << "Found the selected controller ! : name in list  = "<< selectedName;
+                                LOG(LogWarning) << "Found the selected controller ! : guid  = "<< input_p1->getSelected();
+
+                                Settings::getInstance()->setString(confName, input_p1->getSelected());
+                            }
+                        }
+                        
+                        // GPIOS
+                        if(Settings::getInstance()->getBool("GpioControllers") != gpio_select->getState()){
+                            Settings::getInstance()->setBool("GpioControllers", gpio_select->getState()); 
+                            RetroboxSystem::getInstance()->setGPIOControllers(gpio_select->getState());
+                            
+                            if(gpio_select->getState()){
+                                window->pushGui(
+                                           new GuiMsgBox(window, "GPIO CONTROLLERS ARE NOW ON", "OK")
+                                        );
+                            }
+                        }
+                        Settings::getInstance()->saveFile();
+
+                });
+                
+                row.elements.clear();
+                window->pushGui(s);
+                
 }
 
 void GuiMenu::onSizeChanged()
