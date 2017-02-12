@@ -48,7 +48,7 @@ FileData::FileData(FileType type, const fs::path& path, SystemData* system)
 {
 	// metadata needs at least a name field (since that's what getName() will return)
 	if(metadata.get("name").empty())
-		metadata.set("name", getCleanName());
+		metadata.set("name", getDisplayName());
 }
 
 FileData::~FileData()
@@ -56,11 +56,10 @@ FileData::~FileData()
 	if(mParent)
 		mParent->removeChild(this);
 
-	while(mChildren.size())
-		delete mChildren.back();
+		mChildren.clear();
 }
 
-std::string FileData::getCleanName() const
+std::string FileData::getDisplayName() const
 {
 	std::string stem = mPath.stem().generic_string();
 	if(mSystem && mSystem->hasPlatformId(PlatformIds::ARCADE) || mSystem->hasPlatformId(PlatformIds::NEOGEO))
@@ -69,12 +68,43 @@ std::string FileData::getCleanName() const
 	return stem;
 }
 
+std::string FileData::getCleanName() const
+{
+	return removeParenthesis(this->getDisplayName());
+}
+
 const std::string& FileData::getThumbnailPath() const
 {
 	if(!metadata.get("thumbnail").empty())
 		return metadata.get("thumbnail");
 	else
 		return metadata.get("image");
+}
+
+const std::string& FileData::getVideoPath() const
+{
+	if (mType == GAME)
+	{
+		return metadata.get("video");
+	}
+	else
+	{
+		static std::string empty;
+		return empty;
+	}
+}
+
+const std::string& FileData::getMarqueePath() const
+{
+	if (mType == GAME)
+	{
+		return metadata.get("marquee");
+	}
+	else
+	{
+		static std::string empty;
+		return empty;
+	}
 }
 
 
@@ -102,15 +132,20 @@ void FileData::addChild(FileData* file)
 	assert(mType == FOLDER);
 	assert(file->getParent() == NULL);
 
-	mChildren.push_back(file);
-	file->mParent = this;
+	const std::string key = file->getPath().filename().string();
+	if (mChildrenByFilename.find(key) == mChildrenByFilename.end())
+	{
+		mChildrenByFilename[key] = file;
+		mChildren.push_back(file);
+		file->mParent = this;
+	}
 }
 
 void FileData::removeChild(FileData* file)
 {
 	assert(mType == FOLDER);
 	assert(file->getParent() == this);
-
+	mChildrenByFilename.erase(file->getPath().filename().string());
 	for(auto it = mChildren.begin(); it != mChildren.end(); it++)
 	{
 		if(*it == file)
@@ -122,6 +157,7 @@ void FileData::removeChild(FileData* file)
 
 	// File somehow wasn't in our children.
 	assert(false);
+
 }
 
 void FileData::sort(ComparisonFunction& comparator, bool ascending)

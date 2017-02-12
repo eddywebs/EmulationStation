@@ -11,7 +11,7 @@ class AnimationController;
 class ThemeData;
 class Font;
 
-typedef std::pair<std::string, std::string> HelpPrompt;
+typedef std::pair<const char*, const char*> HelpPrompt;
 
 class GuiComponent
 {
@@ -77,6 +77,9 @@ public:
 
 	virtual void onFocusGained() {};
 	virtual void onFocusLost() {};
+	
+	virtual void onShow();
+	virtual void onHide();
 
 	// Default implementation just handles <pos> and <size> tags as normalized float pairs.
 	// You probably want to keep this behavior for any derived classes as well as add your own.
@@ -90,7 +93,9 @@ public:
 	
 	virtual HelpStyle getHelpStyle();
 
-	virtual inline void setScrollDir(int dir) {}
+	// Returns true if the component is busy doing background processing (e.g. HTTP downloads)
+	bool isProcessing() const;
+
 protected:
 	void renderChildren(const Eigen::Affine3f& transform) const;
 	void updateSelf(int deltaTime); // updates animations
@@ -104,6 +109,8 @@ protected:
 
 	Eigen::Vector3f mPosition;
 	Eigen::Vector2f mSize;
+
+	bool mIsProcessing;
 
 public:
 	const static unsigned char MAX_ANIMATIONS = 4;

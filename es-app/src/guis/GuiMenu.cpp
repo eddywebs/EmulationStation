@@ -22,8 +22,6 @@
 #include "components/OptionListComponent.h"
 #include "components/MenuComponent.h"
 #include "VolumeControl.h"
-#include "scrapers/GamesDBScraper.h"
-#include "scrapers/TheArchiveScraper.h"
 
 GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MENU"), mVersion(window)
 {
@@ -170,9 +168,38 @@ GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MEN
 			mWindow->pushGui(s);
 	});
 
+	addEntry("OTHER SETTINGS", 0x777777FF, true,
+		[this] {
+			auto s = new GuiSettings(mWindow, "OTHER SETTINGS");
+
+			// gamelists
+			auto save_gamelists = std::make_shared<SwitchComponent>(mWindow);
+			save_gamelists->setState(Settings::getInstance()->getBool("SaveGamelistsOnExit"));
+			s->addWithLabel("SAVE METADATA ON EXIT", save_gamelists);
+			s->addSaveFunc([save_gamelists] { Settings::getInstance()->setBool("SaveGamelistsOnExit", save_gamelists->getState()); });
+
+			auto parse_gamelists = std::make_shared<SwitchComponent>(mWindow);
+			parse_gamelists->setState(Settings::getInstance()->getBool("ParseGamelistOnly"));
+			s->addWithLabel("PARSE GAMESLISTS ONLY", parse_gamelists);
+			s->addSaveFunc([parse_gamelists] { Settings::getInstance()->setBool("ParseGamelistOnly", parse_gamelists->getState()); });
+
+			// maximum vram
+			auto max_vram = std::make_shared<SliderComponent>(mWindow, 0.f, 1000.f, 10.f, "Mb");
+			max_vram->setValue((float)(Settings::getInstance()->getInt("MaxVRAM")));
+			s->addWithLabel("VRAM LIMIT", max_vram);
+			s->addSaveFunc([max_vram] { Settings::getInstance()->setInt("MaxVRAM", (int)round(max_vram->getValue())); });
+
+			mWindow->pushGui(s);
+	});
+
 	addEntry("CONFIGURE INPUT", 0x777777FF, true, 
-		[this] { 
-			mWindow->pushGui(new GuiDetectDevice(mWindow, false, nullptr));
+		[this] {
+			Window* window = mWindow;
+			window->pushGui(new GuiMsgBox(window, "ARE YOU SURE YOU WANT TO CONFIGURE INPUT?", "YES",
+				[window] {
+					window->pushGui(new GuiDetectDevice(window, false, nullptr));
+				}, "NO", nullptr)
+			);
 	});
 
 	addEntry("QUIT", 0x777777FF, true, 

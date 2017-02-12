@@ -4,6 +4,7 @@
 #include "AudioManager.h"
 #include "Log.h"
 #include "Settings.h"
+#include <algorithm>
 #include <iomanip>
 #include "components/HelpComponent.h"
 #include "components/ImageComponent.h"
@@ -13,7 +14,6 @@ Window::Window() : mNormalizeNextUpdate(false), mFrameTimeElapsed(0), mFrameCoun
 {
 	mHelp = new HelpComponent(this);
 	mBackgroundOverlay = new ImageComponent(this);
-	mBackgroundOverlay->setImage(":/scroll_gradient.png");
 }
 
 Window::~Window()
@@ -65,6 +65,8 @@ bool Window::init(unsigned int width, unsigned int height)
 		return false;
 	}
 
+	mBackgroundOverlay->setImage(":/scroll_gradient.png");
+	
 	InputManager::getInstance()->init();
 
 	ResourceManager::getInstance()->reloadAll();
@@ -88,6 +90,11 @@ bool Window::init(unsigned int width, unsigned int height)
 
 void Window::deinit()
 {
+	// Hide all GUI elements on uninitialisation - this disable
+	for(auto i = mGuiStack.begin(); i != mGuiStack.end(); i++)
+	{
+		(*i)->onHide();
+	}
 	InputManager::getInstance()->deinit();
 	ResourceManager::getInstance()->unloadAll();
 	Renderer::deinit();
@@ -153,11 +160,12 @@ void Window::update(int deltaTime)
 			ss << std::fixed << std::setprecision(2) << ((float)mFrameTimeElapsed / (float)mFrameCountElapsed) << "ms";
 
 			// vram
-			float textureVramUsageMb = TextureResource::getTotalMemUsage() / 1000.0f / 1000.0f;;
+			float textureVramUsageMb = TextureResource::getTotalMemUsage() / 1000.0f / 1000.0f;
+			float textureTotalUsageMb = TextureResource::getTotalTextureSize() / 1000.0f / 1000.0f;
 			float fontVramUsageMb = Font::getTotalMemUsage() / 1000.0f / 1000.0f;;
-			float totalVramUsageMb = textureVramUsageMb + fontVramUsageMb;
-			ss << "\nVRAM: " << totalVramUsageMb << "mb (texs: " << textureVramUsageMb << "mb, fonts: " << fontVramUsageMb << "mb)";
 
+			ss << "\nFont VRAM: " << fontVramUsageMb << " Tex VRAM: " << textureVramUsageMb <<
+				  " Tex Max: " << textureTotalUsageMb;
 			mFrameDataText = std::unique_ptr<TextCache>(mDefaultFonts.at(1)->buildTextCache(ss.str(), 50.f, 50.f, 0xFF00FFFF));
 		}
 
@@ -201,11 +209,16 @@ void Window::render()
 	}
 
 	unsigned int screensaverTime = (unsigned int)Settings::getInstance()->getInt("ScreenSaverTime");
-	if(mTimeSinceLastInput >= screensaverTime && screensaverTime != 0 && mAllowSleep)
+	if(mTimeSinceLastInput >= screensaverTime && screensaverTime != 0)
 	{
-		// go to sleep
-		mSleeping = true;
-		onSleep();
+		renderScreenSaver();
+
+		if (!isProcessing() && mAllowSleep)
+		{
+			// go to sleep
+			mSleeping = true;
+			onSleep();
+		}
 	}
 }
 
@@ -230,7 +243,7 @@ void Window::renderLoadingScreen()
 	Renderer::setMatrix(trans);
 	Renderer::drawRect(0, 0, Renderer::getScreenWidth(), Renderer::getScreenHeight(), 0xFFFFFFFF);
 
-	ImageComponent splash(this);
+	ImageComponent splash(this, true);
 	splash.setResize(Renderer::getScreenWidth() * 0.6f, 0.0f);
 	splash.setImage(":/splash.svg");
 	splash.setPosition((Renderer::getScreenWidth() - splash.getSize().x()) / 2, (Renderer::getScreenHeight() - splash.getSize().y()) / 2 * 0.6f);
@@ -325,12 +338,21 @@ void Window::setHelpPrompts(const std::vector<HelpPrompt>& prompts, const HelpSt
 
 void Window::onSleep()
 {
-	Renderer::setMatrix(Eigen::Affine3f::Identity());
-	unsigned char opacity = Settings::getInstance()->getString("ScreenSaverBehavior") == "dim" ? 0xA0 : 0xFF;
-	Renderer::drawRect(0, 0, Renderer::getScreenWidth(), Renderer::getScreenHeight(), 0x00000000 | opacity);
 }
 
 void Window::onWake()
 {
 
+}
+
+bool Window::isProcessing()
+{
+	return count_if(mGuiStack.begin(), mGuiStack.end(), [](GuiComponent* c) { return c->isProcessing(); }) > 0;
+}
+
+void Window::renderScreenSaver()
+{
+	Renderer::setMatrix(Eigen::Affine3f::Identity());
+	unsigned char opacity = Settings::getInstance()->getString("ScreenSaverBehavior") == "dim" ? 0xA0 : 0xFF;
+	Renderer::drawRect(0, 0, Renderer::getScreenWidth(), Renderer::getScreenHeight(), 0x00000000 | opacity);
 }
