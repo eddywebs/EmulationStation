@@ -30,6 +30,37 @@
 #include "components/MenuComponent.h"
 #include "guis/GuiTextEditPopup.h"
 
+bool getWifiState(){
+		// Check if system is already connected to a network and bail
+			FILE *fp;
+			char val[7];
+			fp = popen("cat /sys/class/net/wlan0/flags", "r");
+			fgets(val, sizeof(val), fp);
+			LOG(LogWarning) << val;
+
+			if( strcmp(val, "0x1002") == 0 ){
+				LOG(LogWarning) << "wifi is off";
+				return false;
+			}
+
+			return true;
+
+	}
+
+void doSomething(bool value ){ 
+	LOG(LogWarning) << value;  
+
+	if(value == 1){
+		system("sudo ifconfig wlan0 up");
+		LOG(LogWarning) << "turning wifi up";
+	}
+	else{
+		LOG(LogWarning) << "turning wifi down";
+		system("sudo ifconfig wlan0 down");
+	}
+
+}
+
 GuiWifi::GuiWifi(Window* window) : GuiComponent(window), mMenu(window, "NETWORK SETTINGS")
 {
 	// MAIN WIFI MENU
@@ -43,13 +74,14 @@ GuiWifi::GuiWifi(Window* window) : GuiComponent(window), mMenu(window, "NETWORK 
 
 	// [version]
 
+
+
 	std::string wificonnect_path = getHomePath() + "/.emulationstation/app/wifi/./wificonnect";
 
 	addEntry("CONNECT TO NEW WIFI", mMenu.getTextColor(), true, 
 		[this, window] { 
 
 			auto s = new GuiSettings(mWindow, "AVAILABLE NETWORKS");
-			
 			// Holds the password the user types in.
 			std::shared_ptr<GuiComponent> password;
 
@@ -58,17 +90,23 @@ GuiWifi::GuiWifi(Window* window) : GuiComponent(window), mMenu(window, "NETWORK 
 			char path[1035];
 			fp = popen("ifconfig wlan0 | grep \"inet addr:\"", "r");
 			fgets(path, sizeof(path), fp);
-			if (std::strlen(path) > 1) {
-				mWindow->pushGui(new GuiMsgBox(mWindow,
-					"Cannot scan for networks when the device is already connected to one.  You can delete the current network in SAVED NETWORKS",
-					"OK"));
-				LOG(LogWarning) << "Attemped to scan for new wireless networks but wlan0 already has an IP address.";
-				return;
-			}
+			LOG(LogWarning) << "This is a log test \n";
+			LOG(LogWarning) << path;
+			// whis there the need for this check ? 
+			// if (std::strlen(path) > 1) {
+			// 	mWindow->pushGui(new GuiMsgBox(mWindow,
+			// 		"Cannot scan for networks when the device is already connected to one.  You can delete the current network in SAVED NETWORKS",
+			// 		"OK"));
+			// 	LOG(LogWarning) << "Attemped to scan for new wireless networks but wlan0 already has an IP address.";
+			// 	return;
+			// }
 
-			// bring down wireless to refresh
-			system("sudo ifconfig wlan0 down");
-			system("sudo ifconfig wlan0 up");
+			// no need to bring down wireless to refresh
+			// system("sudo ifconfig wlan0 down");
+			// system("sudo ifconfig wlan0 up");
+
+			// sleep(5); //wait for 5 secs
+			// //system("sudo ifdown wlan0 &>/dev/null");
 
 			// dump iwlist into a memory file
 			fp = popen("sudo iwlist wlan0 scanning | grep 'SSID\\|Channel:\\|Encryption\\|Quality'", "r");
@@ -356,6 +394,7 @@ GuiWifi::GuiWifi(Window* window) : GuiComponent(window), mMenu(window, "NETWORK 
 		std::string currentLine;
 		bool destroySelf = false;
 
+		LOG(LogWarning) << "wificonnect_path is: "+wificonnect_path;
 		std::string command = "sudo " + wificonnect_path + " --list";
 
 		// Check if wificonnect exists
@@ -408,15 +447,30 @@ GuiWifi::GuiWifi(Window* window) : GuiComponent(window), mMenu(window, "NETWORK 
 		mWindow->pushGui(s);
 	});
 
+
+
 	addEntry("TURN WIFI ON/OFF", mMenu.getTextColor(), true, [this] {
-		mWindow->pushGui(new GuiMsgBox(mWindow, "Turn Wifi On or Off?", "ON", 
-			[] { system("sudo ifconfig wlan0 up"); },
-			"OFF", 
-			[] { system("sudo ifconfig wlan0 down"); },
-			"Cancel",
-			nullptr
-		));
+		// mWindow->pushGui(new GuiMsgBox(mWindow, "Turn Wifi On or Off?", "ON", 
+		// 	[] { system("sudo ifconfig wlan0 up"); },
+		// 	"OFF", 
+		// 	[] { system("sudo ifconfig wlan0 down"); },
+		// 	"Cancel",
+		// 	nullptr
+		// ));
+//Settings::getInstance()->setBool("SaveGamelistsOnExit", save_gamelists->getState());
+		auto s = new GuiSettings(mWindow, "Wifi status");
+
+			// gamelists
+			auto save_gamelists = std::make_shared<SwitchComponent>(mWindow);
+			save_gamelists->setState(getWifiState());
+			s->addWithLabel("Wifi", save_gamelists);
+			s->addSaveFunc([save_gamelists] { doSomething(save_gamelists->getState()); });
+		mWindow->pushGui(s);	
+
 	});
+
+	
+
 
 	mMenu.setFooter("GUIWIFI V 0.51");
 

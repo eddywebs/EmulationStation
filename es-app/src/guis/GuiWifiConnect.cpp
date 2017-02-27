@@ -138,13 +138,13 @@ GuiWifiConnect::GuiWifiConnect(Window* window, std::string wifiName, bool encryp
 			// Make sure wificonnect exists
 			std::string path = getHomePath() + "/.emulationstation/app/wifi/wificonnect";
 			if (boost::filesystem::exists(path)) {
+				LOG(LogWarning) << cmd;
 				system(cmd);
 				mConnected = true;
 			} else {
 				mWindow->pushGui(new GuiMsgBox(mWindow, "wificonnect is missing.  This is used to send wifi info to wpa_supplicant.  This should be in ~/.emulationstation/app/wifi", "OK", nullptr));
 				LOG(LogError) << "WifiConnect: Couldn't find wificonnect in " << path << " folder";
 			}
-
 
 			//std::ofstream oFile;
 			//oFile.open("~/.emulationstation/networks.lst", std::ofstream::out | std::ofstream::app);
@@ -154,12 +154,22 @@ GuiWifiConnect::GuiWifiConnect(Window* window, std::string wifiName, bool encryp
 			// If wpa_supplicant.conf couldn't be opened.
 			//mWindow->pushGui(new GuiMsgBox(mWindow, "Could not open /etc/wpa_supplicant/wpa_supplicant.conf file.  This could be permission issues.", "Ok", nullptr, "Cancel", nullptr));
 
+			// if(connected(wifiName)){
+   //                                       mWindow->pushGui(
+   //                                          new GuiMsgBox(mWindow, "WIFI ENABLED")
+   //                                       );
+   //                                  }else {
+   //                                      mWindow->pushGui(
+   //                                          new GuiMsgBox(mWindow, "WIFI CONFIGURATION ERROR")
+   //                                       );
+   //         }
+
 		},
 
 			"Cancel", nullptr));
 	});
 
-	mMenu.setFooter("GUIWIFI");
+	mMenu.setFooter("Wifi Manager");
 
 	addChild(&mMenu);
 
