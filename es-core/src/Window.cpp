@@ -4,9 +4,13 @@
 #include "AudioManager.h"
 #include "Log.h"
 #include "Settings.h"
+#include <algorithm>
 #include <iomanip>
 #include "components/HelpComponent.h"
 #include "components/ImageComponent.h"
+
+#include "animations/Animation.h"
+#include "animations/LambdaAnimation.h"
 
 Window::Window() : mNormalizeNextUpdate(false), mFrameTimeElapsed(0), mFrameCountElapsed(0), mAverageDeltaTime(10), 
 	mAllowSleep(true), mSleeping(false), mTimeSinceLastInput(0)
@@ -28,6 +32,12 @@ Window::~Window()
 
 void Window::pushGui(GuiComponent* gui)
 {
+	if (mGuiStack.size() == 1) {
+		mBackgroundOverlay->setOpacity(0);
+		auto fadeFunc = [this](float t) { mBackgroundOverlay->setOpacity(lerp<float>(0, 255, t)); };
+		mBackgroundOverlay->setAnimation(new LambdaAnimation(fadeFunc, 200), 0);
+	}
+
 	mGuiStack.push_back(gui);
 	gui->updateHelpPrompts();
 }
@@ -43,9 +53,16 @@ void Window::removeGui(GuiComponent* gui)
 			if(i == mGuiStack.end() && mGuiStack.size()) // we just popped the stack and the stack is not empty
 				mGuiStack.back()->updateHelpPrompts();
 
+			// fade overlay out if no windows are open
+			if (mGuiStack.size() < 2) {
+				auto fadeFunc = [this](float t) { mBackgroundOverlay->setOpacity(lerp<float>(255, 0, t)); };
+				mBackgroundOverlay->setAnimation(new LambdaAnimation(fadeFunc, 200), 0);
+			}
+
 			return;
 		}
 	}
+
 }
 
 GuiComponent* Window::peekGui()
@@ -139,6 +156,8 @@ void Window::update(int deltaTime)
 			deltaTime = mAverageDeltaTime;
 	}
 
+	mBackgroundOverlay->update(deltaTime);
+
 	mFrameTimeElapsed += deltaTime;
 	mFrameCountElapsed++;
 	if(mFrameTimeElapsed > 500)
@@ -189,7 +208,9 @@ void Window::render()
 		{
 			mBackgroundOverlay->render(transform);
 			top->render(transform);
-		}
+		} else 
+		if (mBackgroundOverlay->isAnimationPlaying(0) && mBackgroundOverlay->getOpacity() > 0)
+			mBackgroundOverlay->render(transform);
 	}
 
 	if(!mRenderedHelpPrompts)
@@ -202,11 +223,16 @@ void Window::render()
 	}
 
 	unsigned int screensaverTime = (unsigned int)Settings::getInstance()->getInt("ScreenSaverTime");
-	if(mTimeSinceLastInput >= screensaverTime && screensaverTime != 0 && mAllowSleep)
+	if(mTimeSinceLastInput >= screensaverTime && screensaverTime != 0)
 	{
-		// go to sleep
-		mSleeping = true;
-		onSleep();
+		renderScreenSaver();
+
+		if (!isProcessing() && mAllowSleep)
+		{
+			// go to sleep
+			mSleeping = true;
+			onSleep();
+		}
 	}
 }
 
@@ -326,12 +352,21 @@ void Window::setHelpPrompts(const std::vector<HelpPrompt>& prompts, const HelpSt
 
 void Window::onSleep()
 {
-	Renderer::setMatrix(Eigen::Affine3f::Identity());
-	unsigned char opacity = Settings::getInstance()->getString("ScreenSaverBehavior") == "dim" ? 0xA0 : 0xFF;
-	Renderer::drawRect(0, 0, Renderer::getScreenWidth(), Renderer::getScreenHeight(), 0x00000000 | opacity);
 }
 
 void Window::onWake()
 {
 
+}
+
+bool Window::isProcessing()
+{
+	return count_if(mGuiStack.begin(), mGuiStack.end(), [](GuiComponent* c) { return c->isProcessing(); }) > 0;
+}
+
+void Window::renderScreenSaver()
+{
+	Renderer::setMatrix(Eigen::Affine3f::Identity());
+	unsigned char opacity = Settings::getInstance()->getString("ScreenSaverBehavior") == "dim" ? 0xA0 : 0xFF;
+	Renderer::drawRect(0, 0, Renderer::getScreenWidth(), Renderer::getScreenHeight(), 0x00000000 | opacity);
 }

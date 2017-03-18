@@ -7,6 +7,7 @@
 #include "Renderer.h"
 #include "views/ViewController.h"
 #include "SystemData.h"
+#include "WindowThemeData.h"
 #include <boost/filesystem.hpp>
 #include "guis/GuiDetectDevice.h"
 #include "guis/GuiMsgBox.h"
@@ -109,6 +110,8 @@ bool verifyHomeFolderExists()
 	//make sure the config directory exists
 	std::string home = getHomePath();
 	std::string configDir = home + "/.emulationstation";
+	LOG(LogError) << "config dir is" << configDir;
+
 	if(!fs::exists(configDir))
 	{
 		std::cout << "Creating config directory \"" << configDir << "\"\n";
