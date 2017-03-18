@@ -47,16 +47,19 @@ bool getWifiState(){
 
 	}
 
-void doSomething(bool value ){ 
+void switchWan(bool value ){ 
 	LOG(LogWarning) << value;  
 
 	if(value == 1){
 		system("sudo ifconfig wlan0 up");
 		LOG(LogWarning) << "turning wifi up";
+
 	}
 	else{
+	
+		system("sudo ifconfig wlan0 down ");
 		LOG(LogWarning) << "turning wifi down";
-		system("sudo ifconfig wlan0 down");
+		
 	}
 
 }
@@ -464,7 +467,7 @@ GuiWifi::GuiWifi(Window* window) : GuiComponent(window), mMenu(window, "NETWORK 
 			auto save_gamelists = std::make_shared<SwitchComponent>(mWindow);
 			save_gamelists->setState(getWifiState());
 			s->addWithLabel("Wifi", save_gamelists);
-			s->addSaveFunc([save_gamelists] { doSomething(save_gamelists->getState()); });
+			s->addSaveFunc([save_gamelists] { switchWan(save_gamelists->getState()); });
 		mWindow->pushGui(s);	
 
 	});
