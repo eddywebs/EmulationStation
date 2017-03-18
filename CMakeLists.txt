@@ -26,9 +26,11 @@ else()
 endif()
 
 #-------------------------------------------------------------------------------
-#check if we're running on olinuxino
+#check if we're running on olinuxino / odroid / etc
 MESSAGE("Looking for libMali.so")
-if(EXISTS "/usr/lib/libMali.so")
+if(EXISTS "/usr/lib/libMali.so" OR
+   EXISTS "/usr/lib/arm-linux-gnueabihf/libMali.so" OR
+   EXISTS "/usr/lib/aarch64-linux-gnu/libMali.so")
     MESSAGE("libMali.so found")
     set(GLSystem "OpenGL ES")
 else()
@@ -48,6 +50,7 @@ find_package(SDL2 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system filesystem date_time locale)
 find_package(Eigen3 REQUIRED)
 find_package(CURL REQUIRED)
+find_package(VLC REQUIRED)
 
 #add ALSA for Linux
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -99,6 +102,7 @@ set(COMMON_INCLUDE_DIRS
     ${Boost_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIR}
     ${CURL_INCLUDE_DIR}
+    ${VLC_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external
     ${CMAKE_CURRENT_SOURCE_DIR}/es-core/src
 )
@@ -148,6 +152,7 @@ set(COMMON_LIBRARIES
     ${FreeImage_LIBRARIES}
 	${SDL2_LIBRARY}
     ${CURL_LIBRARIES}
+    ${VLC_LIBRARIES}
     pugixml
     nanosvg
 )

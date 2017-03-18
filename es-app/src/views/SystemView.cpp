@@ -46,13 +46,13 @@ void SystemView::populate()
 		// make logo
 		if(theme->getElement("system", "logo", "image"))
 		{
-			ImageComponent* logo = new ImageComponent(mWindow);
+			ImageComponent* logo = new ImageComponent(mWindow, false, false);
 			logo->setMaxSize(Eigen::Vector2f(logoSize().x(), logoSize().y()));
 			logo->applyTheme((*it)->getTheme(), "system", "logo", ThemeFlags::PATH);
 			logo->setPosition((logoSize().x() - logo->getSize().x()) / 2, (logoSize().y() - logo->getSize().y()) / 2); // center
 			e.data.logo = std::shared_ptr<GuiComponent>(logo);
 
-			ImageComponent* logoSelected = new ImageComponent(mWindow);
+			ImageComponent* logoSelected = new ImageComponent(mWindow, false, false);
 			logoSelected->setMaxSize(Eigen::Vector2f(logoSize().x() * SELECTED_SCALE, logoSize().y() * SELECTED_SCALE * 0.70f));
 			logoSelected->applyTheme((*it)->getTheme(), "system", "logo", ThemeFlags::PATH);
 			logoSelected->setPosition((logoSize().x() - logoSelected->getSize().x()) / 2, 
@@ -180,8 +180,10 @@ void SystemView::onCursorChanged(const CursorState& state)
 	setAnimation(infoFadeOut, 0, [this, gameCount] {
 		std::stringstream ss;
 		
+		if (getSelected()->getName() == "retropie")
+			ss << "CONFIGURATION";
 		// only display a game count if there are at least 2 games
-		if(gameCount > 1)
+		else if(gameCount > 1)
 			ss << gameCount << " GAMES AVAILABLE";
 
 		mSystemInfo.setText(ss.str()); 
