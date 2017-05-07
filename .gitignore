@@ -1,3 +1,7 @@
+
+CPackConfig.cmake
+CPackSourceConfig.cmake
+install_manifest.txt
 # Compiled Object files
 *.slo
 *.lo
