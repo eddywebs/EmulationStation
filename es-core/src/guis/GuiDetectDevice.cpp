@@ -43,13 +43,19 @@ GuiDetectDevice::GuiDetectDevice(Window* window, bool firstRun, const std::funct
 	
 	if(numDevices > 0)
 		deviceInfo << numDevices << " GAMEPAD" << (numDevices > 1 ? "S" : "") << " DETECTED";
-	else
+	else{
 		deviceInfo << "NO GAMEPADS DETECTED";
+        deviceInfo << "\nCONNECT CONTROLLER TO CONSOLE";
+        deviceInfo << "\nFor wireless connect the controller to the console using USB cable. After 3 seconds, ";
+        deviceInfo << "\ndisconnect the controller from the USB cable, Press P3 and wait for controller to pair.";
+        //deviceInfo << "\n3)";
+
+	}
 	mDeviceInfo = std::make_shared<TextComponent>(mWindow, deviceInfo.str(), Font::get(FONT_SIZE_SMALL), wTheme->title.color, ALIGN_CENTER);
 	mGrid.setEntry(mDeviceInfo, Vector2i(0, 1), false, true);
 
 	// message
-	mMsg1 = std::make_shared<TextComponent>(mWindow, "HOLD A BUTTON ON YOUR DEVICE TO CONFIGURE IT.", Font::get(FONT_SIZE_SMALL), wTheme->default_text.color, ALIGN_CENTER);
+	mMsg1 = std::make_shared<TextComponent>(mWindow, "ONCE CONTROLLERS ARE CONNECTED, HOLD ANY BUTTON ON YOUR GAMEPAD TO CONFIGURE IT.", Font::get(FONT_SIZE_SMALL), wTheme->default_text.color, ALIGN_CENTER);
 	mGrid.setEntry(mMsg1, Vector2i(0, 2), false, true);
 
 	const char* msg2str = firstRun ? "PRESS F4 TO QUIT AT ANY TIME." : "PRESS ESC TO CANCEL.";
@@ -60,7 +66,7 @@ GuiDetectDevice::GuiDetectDevice(Window* window, bool firstRun, const std::funct
 	mDeviceHeld = std::make_shared<TextComponent>(mWindow, "", Font::get(FONT_SIZE_MEDIUM), 0x99999900, ALIGN_CENTER);
 	mGrid.setEntry(mDeviceHeld, Vector2i(0, 4), false, true);
 
-	setSize(Renderer::getScreenWidth() * 0.6f, Renderer::getScreenHeight() * 0.5f);
+	setSize(Renderer::getScreenWidth() * 0.8f, Renderer::getScreenHeight() * 0.7f);
 	setPosition((Renderer::getScreenWidth() - mSize.x()) / 2, (Renderer::getScreenHeight() - mSize.y()) / 2);
 }
 
