@@ -11,14 +11,13 @@ set(CORE_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/InputManager.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Log.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/platform.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/PowerSaver.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Settings.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Sound.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/ThemeData.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Util.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Window.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/AnimationUtil.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/WindowThemeData.h
 
 	# Animations
 	${CMAKE_CURRENT_SOURCE_DIR}/src/animations/Animation.h
@@ -44,21 +43,22 @@ set(CORE_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/components/SwitchComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/components/TextComponent.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/components/TextEditComponent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/components/GridTileComponent.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/components/ProgressBarComponent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/components/VideoComponent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/components/VideoPlayerComponent.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/components/VideoVlcComponent.h
 
 	# Guis
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiDetectDevice.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiInputConfig.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiMsgBox.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiTextEditPopup.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiTextEditPopupKeyboard.h
 
 	# Resources
 	${CMAKE_CURRENT_SOURCE_DIR}/src/resources/Font.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/resources/ResourceManager.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/resources/SVGResource.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/resources/TextureResource.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/resources/TextureData.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/resources/TextureDataManager.h
 
 	# Embedded assets (needed by ResourceManager)
 	${emulationstation-all_SOURCE_DIR}/data/Resources.h
@@ -74,6 +74,7 @@ set(CORE_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/InputManager.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Log.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/platform.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/PowerSaver.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer_draw_gl.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer_init_sdlgl.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Settings.cpp
@@ -81,8 +82,6 @@ set(CORE_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/ThemeData.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Util.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Window.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/AnimationUtil.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/WindowThemeData.cpp
 
 	# Animations
 	${CMAKE_CURRENT_SOURCE_DIR}/src/animations/AnimationController.cpp
@@ -103,21 +102,22 @@ set(CORE_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/components/SwitchComponent.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/components/TextComponent.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/components/TextEditComponent.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/components/GridTileComponent.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/components/ProgressBarComponent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/components/VideoComponent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/components/VideoPlayerComponent.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/components/VideoVlcComponent.cpp
 
 	# Guis
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiDetectDevice.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiInputConfig.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiMsgBox.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiTextEditPopup.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiTextEditPopupKeyboard.cpp
 
 	# Resources
 	${CMAKE_CURRENT_SOURCE_DIR}/src/resources/Font.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/resources/ResourceManager.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/resources/SVGResource.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/resources/TextureResource.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/resources/TextureData.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/resources/TextureDataManager.cpp
 )
 
 set(EMBEDDED_ASSET_SOURCES
@@ -144,6 +144,7 @@ set(EMBEDDED_ASSET_SOURCES
     ${emulationstation-all_SOURCE_DIR}/data/converted/help_button_r_svg.cpp
     ${emulationstation-all_SOURCE_DIR}/data/converted/help_button_start_svg.cpp
     ${emulationstation-all_SOURCE_DIR}/data/converted/help_button_select_svg.cpp
+    ${emulationstation-all_SOURCE_DIR}/data/converted/help_button_hotkey_svg.cpp
     ${emulationstation-all_SOURCE_DIR}/data/converted/help_dpad_up_svg.cpp
     ${emulationstation-all_SOURCE_DIR}/data/converted/help_dpad_down_svg.cpp
     ${emulationstation-all_SOURCE_DIR}/data/converted/help_dpad_left_svg.cpp
@@ -170,9 +171,6 @@ set(EMBEDDED_ASSET_SOURCES
     ${emulationstation-all_SOURCE_DIR}/data/converted/busy_1_svg.cpp
     ${emulationstation-all_SOURCE_DIR}/data/converted/busy_2_svg.cpp
     ${emulationstation-all_SOURCE_DIR}/data/converted/busy_3_svg.cpp
-	
-    ${emulationstation-all_SOURCE_DIR}/data/converted/blank_game_png.cpp
-    ${emulationstation-all_SOURCE_DIR}/data/converted/folder_png.cpp
 )
 
 list(APPEND CORE_SOURCES ${EMBEDDED_ASSET_SOURCES})

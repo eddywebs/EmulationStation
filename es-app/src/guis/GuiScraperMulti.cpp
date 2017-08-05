@@ -3,7 +3,7 @@
 #include "Log.h"
 #include "views/ViewController.h"
 #include "Gamelist.h"
-#include "WindowThemeData.h"
+#include "PowerSaver.h"
 
 #include "components/TextComponent.h"
 #include "components/ButtonComponent.h"
@@ -19,6 +19,7 @@ GuiScraperMulti::GuiScraperMulti(Window* window, const std::queue<ScraperSearchP
 {
 	assert(mSearchQueue.size());
 
+	PowerSaver::setState(false);
 	addChild(&mBackground);
 	addChild(&mGrid);
 
@@ -29,18 +30,14 @@ GuiScraperMulti::GuiScraperMulti(Window* window, const std::queue<ScraperSearchP
 	mTotalSuccessful = 0;
 	mTotalSkipped = 0;
 
-	// Get Window Theme Data
-	auto wTheme = WindowThemeData::getInstance()->getCurrentTheme();
-	mBackground.setColor(wTheme->background.color);
-
 	// set up grid
-	mTitle = std::make_shared<TextComponent>(mWindow, "SCRAPING IN PROGRESS", Font::get(FONT_SIZE_LARGE), wTheme->title.color, ALIGN_CENTER);
+	mTitle = std::make_shared<TextComponent>(mWindow, "SCRAPING IN PROGRESS", Font::get(FONT_SIZE_LARGE), 0x555555FF, ALIGN_CENTER);
 	mGrid.setEntry(mTitle, Vector2i(0, 0), false, true);
 
-	mSystem = std::make_shared<TextComponent>(mWindow, "SYSTEM", Font::get(FONT_SIZE_MEDIUM), wTheme->default_text.color, ALIGN_CENTER);
+	mSystem = std::make_shared<TextComponent>(mWindow, "SYSTEM", Font::get(FONT_SIZE_MEDIUM), 0x777777FF, ALIGN_CENTER);
 	mGrid.setEntry(mSystem, Vector2i(0, 1), false, true);
 
-	mSubtitle = std::make_shared<TextComponent>(mWindow, "subtitle text", Font::get(FONT_SIZE_SMALL), wTheme->title.color, ALIGN_CENTER);
+	mSubtitle = std::make_shared<TextComponent>(mWindow, "subtitle text", Font::get(FONT_SIZE_SMALL), 0x888888FF, ALIGN_CENTER);
 	mGrid.setEntry(mSubtitle, Vector2i(0, 2), false, true);
 
 	mSearchComp = std::make_shared<ScraperSearchComponent>(mWindow, 
@@ -98,6 +95,7 @@ void GuiScraperMulti::doNextSearch()
 {
 	if(mSearchQueue.empty())
 	{
+		PowerSaver::setState(true);
 		finish();
 		return;
 	}

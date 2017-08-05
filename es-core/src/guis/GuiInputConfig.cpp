@@ -1,5 +1,5 @@
 #include "guis/GuiInputConfig.h"
-#include "WindowThemeData.h"
+#include "guis/GuiMsgBox.h"
 #include "Window.h"
 #include "Log.h"
 #include "components/TextComponent.h"
@@ -16,7 +16,7 @@
 // 											":/help/button_a.svg", ":/help/button_b.svg", ":/help/button_start.svg", ":/help/button_select.svg", 
 // 											":/help/button_l.svg", ":/help/button_r.svg" };
 
-static const int inputCount = 24;
+static const int inputCount = 25;
 static const char* inputName[inputCount] =
 {
 	"Up",
@@ -42,7 +42,8 @@ static const char* inputName[inputCount] =
 	"RightAnalogUp",
 	"RightAnalogDown",
 	"RightAnalogLeft",
-	"RightAnalogRight"
+	"RightAnalogRight",
+	"HotKeyEnable"
 };
 static const bool inputSkippable[inputCount] =
 {
@@ -53,6 +54,7 @@ static const bool inputSkippable[inputCount] =
 	true,
 	true,
 	false,
+	true,
 	true,
 	true,
 	true,
@@ -96,7 +98,8 @@ static const char* inputDispName[inputCount] =
 	"RIGHT ANALOG UP",
 	"RIGHT ANALOG DOWN",
 	"RIGHT ANALOG LEFT",
-	"RIGHT ANALOG RIGHT"
+	"RIGHT ANALOG RIGHT",
+	"HOTKEY ENABLE"
 };
 static const char* inputIcon[inputCount] =
 {
@@ -123,7 +126,8 @@ static const char* inputIcon[inputCount] =
 	":/help/analog_up.svg",
 	":/help/analog_down.svg",
 	":/help/analog_left.svg",
-	":/help/analog_right.svg"
+	":/help/analog_right.svg",
+	":/help/button_hotkey.svg"
 };
 
 //MasterVolUp and MasterVolDown are also hooked up, but do not appear on this screen.
@@ -148,14 +152,10 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 	addChild(&mBackground);
 	addChild(&mGrid);
 
-	// Get window theme data
-	auto wTheme = WindowThemeData::getInstance()->getCurrentTheme();
-	mBackground.setColor(wTheme->background.color);
-
 	// 0 is a spacer row
 	mGrid.setEntry(std::make_shared<GuiComponent>(mWindow), Vector2i(0, 0), false);
 
-	mTitle = std::make_shared<TextComponent>(mWindow, "CONFIGURING", Font::get(FONT_SIZE_LARGE), wTheme->title.color, ALIGN_CENTER);
+	mTitle = std::make_shared<TextComponent>(mWindow, "CONFIGURING", Font::get(FONT_SIZE_LARGE), 0x555555FF, ALIGN_CENTER);
 	mGrid.setEntry(mTitle, Vector2i(0, 1), false, true);
 	
 	std::stringstream ss;
@@ -163,7 +163,7 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 		ss << "KEYBOARD";
 	else
 		ss << "GAMEPAD " << (target->getDeviceId() + 1);
-	mSubtitle1 = std::make_shared<TextComponent>(mWindow, strToUpper(ss.str()), Font::get(FONT_SIZE_MEDIUM), wTheme->default_text.color, ALIGN_CENTER);
+	mSubtitle1 = std::make_shared<TextComponent>(mWindow, strToUpper(ss.str()), Font::get(FONT_SIZE_MEDIUM), 0x555555FF, ALIGN_CENTER);
 	mGrid.setEntry(mSubtitle1, Vector2i(0, 2), false, true);
 
 	mSubtitle2 = std::make_shared<TextComponent>(mWindow, "HOLD ANY BUTTON TO SKIP", Font::get(FONT_SIZE_SMALL), 0x99999900, ALIGN_CENTER);
@@ -180,7 +180,7 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 		// icon
 		auto icon = std::make_shared<ImageComponent>(mWindow);
 		icon->setImage(inputIcon[i]);
-		icon->setColorShift(wTheme->default_text.color);
+		icon->setColorShift(0x777777FF);
 		icon->setResize(0, Font::get(FONT_SIZE_MEDIUM)->getLetterHeight() * 1.25f);
 		row.addElement(icon, false);
 
@@ -189,10 +189,10 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 		spacer->setSize(16, 0);
 		row.addElement(spacer, false);
 
-		auto text = std::make_shared<TextComponent>(mWindow, inputDispName[i], Font::get(FONT_SIZE_MEDIUM), wTheme->default_text.color);
+		auto text = std::make_shared<TextComponent>(mWindow, inputDispName[i], Font::get(FONT_SIZE_MEDIUM), 0x777777FF);
 		row.addElement(text, true);
 
-		auto mapping = std::make_shared<TextComponent>(mWindow, "-NOT DEFINED-", Font::get(FONT_SIZE_MEDIUM, FONT_PATH_LIGHT), wTheme->footer.color, ALIGN_RIGHT);
+		auto mapping = std::make_shared<TextComponent>(mWindow, "-NOT DEFINED-", Font::get(FONT_SIZE_MEDIUM, FONT_PATH_LIGHT), 0x999999FF, ALIGN_RIGHT);
 		setNotDefined(mapping); // overrides text and color set above
 		row.addElement(mapping, true);
 		mMappings.push_back(mapping);
@@ -262,11 +262,34 @@ GuiInputConfig::GuiInputConfig(Window* window, InputConfig* target, bool reconfi
 
 	// buttons
 	std::vector< std::shared_ptr<ButtonComponent> > buttons;
-	buttons.push_back(std::make_shared<ButtonComponent>(mWindow, "OK", "ok", [this, okCallback] { 
+	std::function<void()> okFunction = [this, okCallback] {
 		InputManager::getInstance()->writeDeviceConfig(mTargetConfig); // save
 		if(okCallback)
 			okCallback();
 		delete this; 
+	};
+	buttons.push_back(std::make_shared<ButtonComponent>(mWindow, "OK", "ok", [this, okFunction] {
+		// check if the hotkey enable button is set. if not prompt the user to use select or nothing.
+		Input input;
+		if (!mTargetConfig->getInputByName("HotKeyEnable", &input)) {
+			mWindow->pushGui(new GuiMsgBox(mWindow,
+				"YOU DIDN'T CHOOSE A HOTKEY ENABLE BUTTON. THIS IS REQUIRED FOR EXITING GAMES WITH A CONTROLLER. DO YOU WANT TO USE THE SELECT BUTTON DEFAULT ? PLEASE ANSWER YES TO USE SELECT OR NO TO NOT SET A HOTKEY ENABLE BUTTON.",
+				"YES", [this, okFunction] {
+					Input input;
+					mTargetConfig->getInputByName("Select", &input);
+					mTargetConfig->mapInput("HotKeyEnable", input);
+					okFunction();
+					},
+				"NO", [this, okFunction] {
+					// for a disabled hotkey enable button, set to a key with id 0,
+					// so the input configuration script can be backwards compatible.
+					mTargetConfig->mapInput("HotKeyEnable", Input(DEVICE_KEYBOARD, TYPE_KEY, 0, 1, true));
+					okFunction();
+				}
+			));
+		} else {
+			okFunction();
+		}
 	}));
 	mButtonGrid = makeButtonGrid(mWindow, buttons);
 	mGrid.setEntry(mButtonGrid, Vector2i(0, 6), true, false);
@@ -313,7 +336,7 @@ void GuiInputConfig::update(int deltaTime)
 				// crossed the second boundary, update text
 				const auto& text = mMappings.at(mHeldInputId);
 				std::stringstream ss;
-				ss << gettext("HOLD FOR ") << HOLD_TO_SKIP_MS/1000 - curSec << gettext("S TO SKIP");
+				ss << "HOLD FOR " << HOLD_TO_SKIP_MS/1000 - curSec << "S TO SKIP";
 				text->setText(ss.str());
 				text->setColor(0x777777FF);
 			}
@@ -373,8 +396,7 @@ bool GuiInputConfig::assign(Input input, int inputId)
 
 	// if this input is mapped to something other than "nothing" or the current row, error
 	// (if it's the same as what it was before, allow it)
-        if(std::string("HotKey").compare(inputName[inputId]) != 0)
-	if(mTargetConfig->getMappedTo(input).size() > 0 && !mTargetConfig->isMappedTo(inputName[inputId], input))
+	if(mTargetConfig->getMappedTo(input).size() > 0 && !mTargetConfig->isMappedTo(inputName[inputId], input) && strcmp(inputName[inputId], "HotKeyEnable") != 0)
 	{
 		error(mMappings.at(inputId), "Already mapped!");
 		return false;

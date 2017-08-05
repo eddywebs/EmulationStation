@@ -81,11 +81,12 @@ bool ComponentList::input(InputConfig* config, Input input)
 	}else if(config->isMappedTo("down", input))
 	{
 		return listInput(input.value != 0 ? 1 : 0);
-	}else if(config->isMappedTo("leftbottom", input))
+
+	}else if(config->isMappedTo("pageup", input))
 	{
-		return listInput(input.value != 0 ? -7 : 0);
-	}else if(config->isMappedTo("rightbottom", input)){
-		return listInput(input.value != 0 ? 7 : 0);
+		return listInput(input.value != 0 ? -6 : 0);
+	}else if(config->isMappedTo("pagedown", input)){
+		return listInput(input.value != 0 ? 6 : 0);
 	}
 
 	return false;
@@ -120,7 +121,7 @@ void ComponentList::onCursorChanged(const CursorState& state)
 	{
 		for(auto it = mEntries.begin(); it != mEntries.end(); it++)
 			it->data.elements.back().component->onFocusLost();
-		
+
 		mEntries.at(mCursor).data.elements.back().component->onFocusGained();
 	}
 
@@ -168,7 +169,7 @@ void ComponentList::render(const Eigen::Affine3f& parentTrans)
 	// clip everything to be inside our bounds
 	Eigen::Vector3f dim(mSize.x(), mSize.y(), 0);
 	dim = trans * dim - trans.translation();
-	Renderer::pushClipRect(Eigen::Vector2i((int)trans.translation().x(), (int)trans.translation().y()), 
+	Renderer::pushClipRect(Eigen::Vector2i((int)trans.translation().x(), (int)trans.translation().y()),
 		Eigen::Vector2i((int)round(dim.x()), (int)round(dim.y() + 1)));
 
 	// scroll the camera
@@ -202,20 +203,20 @@ void ComponentList::render(const Eigen::Affine3f& parentTrans)
 		// need a function that goes roughly 0x777777 -> 0xFFFFFF
 		// and 0xFFFFFF -> 0x777777
 		// (1 - dst) + 0x77
-	
+
 		const float selectedRowHeight = getRowHeight(mEntries.at(mCursor).data);
 		Renderer::drawRect(0.0f, mSelectorBarOffset, mSize.x(), selectedRowHeight, 0xFFFFFFFF,
 			GL_ONE_MINUS_DST_COLOR, GL_ZERO);
 		Renderer::drawRect(0.0f, mSelectorBarOffset, mSize.x(), selectedRowHeight, wTheme->highlight_color,
 			GL_ONE, GL_ONE);
-	
+
 		// hack to draw 2px dark on left/right of the bar
 		Renderer::drawRect(0.0f, mSelectorBarOffset, 2.0f, selectedRowHeight, 0x878787FF);
 		Renderer::drawRect(mSize.x() - 2.0f, mSelectorBarOffset, 2.0f, selectedRowHeight, 0x878787FF);
 
 		for(auto it = drawAfterCursor.begin(); it != drawAfterCursor.end(); it++)
 			(*it)->render(trans);
-		
+
 		// reset matrix if one of these components changed it
 		if(drawAfterCursor.size())
 			Renderer::setMatrix(trans);
@@ -320,7 +321,7 @@ std::vector<HelpPrompt> ComponentList::getHelpPrompts()
 		bool addMovePrompt = true;
 		for(auto it = prompts.begin(); it != prompts.end(); it++)
 		{
-			if(it->first == "up/down" || it->first == "up/down/left/right")
+			if(strcmp(it->first, "up/down") == 0 || strcmp(it->first, "up/down/left/right") == 0)
 			{
 				addMovePrompt = false;
 				break;
@@ -336,7 +337,7 @@ std::vector<HelpPrompt> ComponentList::getHelpPrompts()
 
 bool ComponentList::moveCursor(int amt)
 {
-	bool ret = listInput(amt); 
-	listInput(0); 
+	bool ret = listInput(amt);
+	listInput(0);
 	return ret;
 }

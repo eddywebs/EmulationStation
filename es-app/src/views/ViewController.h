@@ -30,6 +30,7 @@ public:
 	void goToGameList(SystemData* system);
 	void goToSystemView(SystemData* system);
 	void goToStart();
+	void goToRandomGame();
 
 	void onFileChanged(FileData* file, FileChangeType change);
 
@@ -47,6 +48,15 @@ public:
 		START_SCREEN,
 		SYSTEM_SELECT,
 		GAME_LIST
+	};
+
+	enum GameListViewType
+	{
+		AUTOMATIC,
+		BASIC,
+		DETAILED,
+		VIDEO
+		// GRID TODO!
 	};
 
 	struct State
