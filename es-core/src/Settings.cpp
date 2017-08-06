@@ -41,7 +41,7 @@ void Settings::setDefaults()
 	mBoolMap["BackgroundJoystickInput"] = false;
 	mBoolMap["ParseGamelistOnly"] = false;
 	mBoolMap["DrawFramerate"] = false;
-	mBoolMap["ShowExit"] = true;
+	mBoolMap["ShowExit"] = false;
 	mBoolMap["Windowed"] = false;
 	mBoolMap["UseOSK"] = true;
 

@@ -248,7 +248,7 @@ GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MEN
 						LOG(LogWarning) << "Restart terminated with non-zero result!";
 				}, "NO", nullptr));
 			});
-			row.addElement(std::make_shared<TextComponent>(window, "RESTART EMULATIONSTATION", Font::get(FONT_SIZE_MEDIUM), text_color), true);
+			row.addElement(std::make_shared<TextComponent>(window, "REFRESH EMULATIONSTATION", Font::get(FONT_SIZE_MEDIUM), text_color), true);
 			s->addRow(row);
 
 			row.elements.clear();
@@ -273,7 +273,7 @@ GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MEN
 			row.addElement(std::make_shared<TextComponent>(window, "SHUTDOWN SYSTEM", Font::get(FONT_SIZE_MEDIUM), text_color), true);
 			s->addRow(row);
 
-			if(Settings::getInstance()->getBool("ShowExit"))
+			if( Settings::getInstance()->getBool("ShowExit") )
 			{
 				row.elements.clear();
 				row.makeAcceptInputHandler([window] {
