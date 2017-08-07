@@ -247,7 +247,7 @@ GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MEN
 
 			ComponentListRow row;
 			row.makeAcceptInputHandler([window] {
-				window->pushGui(new GuiMsgBox(window, "REALLY RESTART?", "YES",
+				window->pushGui(new GuiMsgBox(window, "READY FOR REFRESH?", "YES",
 				[] {
 					if(quitES("/tmp/es-restart") != 0)
 						LOG(LogWarning) << "Restart terminated with non-zero result!";
