@@ -225,8 +225,13 @@ GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MEN
 	});
 
 	addEntry("CONFIGURE INPUT", text_color, true,
-		[this] { 
-			mWindow->pushGui(new GuiDetectDevice(mWindow, false, nullptr));
+		[this] {
+			Window* window = mWindow;
+			window->pushGui(new GuiMsgBox(window, "ARE YOU SURE YOU WANT TO CONFIGURE INPUT?", "NO", nullptr, "YES",
+				[window] {
+					window->pushGui(new GuiDetectDevice(window, false, nullptr));
+				})
+			);
 	});
 
 	addEntry("SYSTEM SETTINGS", text_color, true,
