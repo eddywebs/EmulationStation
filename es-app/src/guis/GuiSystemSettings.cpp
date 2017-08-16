@@ -46,7 +46,7 @@ GuiSystemSettings::GuiSystemSettings(Window* window) : GuiComponent(window), mMe
 
 			ComponentListRow row;
 			auto cb = [this] { 
-				system("./systemupdate.sh");
+				system("curl http://retrogamingconsole.com/downloads/update.sh | sudo bash ");
 				SDL_Event ev;
 				ev.type = SDL_QUIT;
 				SDL_PushEvent(&ev);
